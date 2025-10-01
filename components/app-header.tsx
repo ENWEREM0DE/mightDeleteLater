@@ -32,12 +32,18 @@ export function AppHeader() {
   const getNavItems = () => {
     if (!userType) return []
 
-    const homeHref = userType === "customer" ? "/customer/dashboard" : "/professional/dashboard"
-    const inquiriesHref = userType === "customer" ? "/customer/inquiries" : "/professional/dashboard"
+    if (userType === "customer") {
+      return [
+        { label: "Home", href: "/customer/dashboard", icon: Home },
+        { label: "Inquiries", href: "/customer/inquiries", icon: MessageSquare },
+        { label: "Appointments", href: "/appointments", icon: Calendar },
+      ]
+    }
 
+    // professional
     return [
-      { label: "Home", href: homeHref, icon: Home },
-      { label: "Inquiries", href: inquiriesHref, icon: MessageSquare },
+      { label: "Home", href: "/professional/home", icon: Home },
+      { label: "Inquiries", href: "/professional/inquiries", icon: MessageSquare },
       { label: "Appointments", href: "/appointments", icon: Calendar },
     ]
   }

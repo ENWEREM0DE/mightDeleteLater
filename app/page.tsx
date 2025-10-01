@@ -12,7 +12,7 @@ export default function LandingPage() {
             <div className="bg-primary rounded-xl p-3">
               <Home className="w-10 h-10 text-primary-foreground" />
             </div>
-            <h1 className="text-5xl font-bold text-foreground">ProMatch</h1>
+            <h1 className="text-5xl font-bold text-foreground">WMNM</h1>
           </div>
           <p className="text-xl text-muted-foreground text-balance">Your Connection to Trusted Home Services</p>
         </div>

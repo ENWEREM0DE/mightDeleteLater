@@ -36,7 +36,7 @@ export default function ProfessionalLoginPage() {
         sessionStorage.setItem("businessName", businessName)
         sessionStorage.setItem("category", category)
       }
-      router.push("/professional/dashboard")
+      router.push("/professional/home")
     }
   }
 
