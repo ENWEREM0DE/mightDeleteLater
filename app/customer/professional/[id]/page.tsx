@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useEffect, useState } from "react"
 import { useRouter, useParams } from "next/navigation"
+import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -62,6 +63,7 @@ export default function ProfessionalDetailPage() {
 
   const [userName, setUserName] = useState("")
   const [formData, setFormData] = useState<Record<string, string>>({})
+  const [uploadedImages, setUploadedImages] = useState<Record<string, string>>({})
 
   useEffect(() => {
     const name = sessionStorage.getItem("customerName")
@@ -70,7 +72,19 @@ export default function ProfessionalDetailPage() {
     } else {
       setUserName(name)
     }
-  }, [router])
+
+    // Load professional's custom form template if exists
+    const customTemplate = sessionStorage.getItem("professionalFormTemplate")
+    if (customTemplate && professionalId === "1") {
+      // For demo purposes, only professional 1 has custom form
+      try {
+        const parsedTemplate = JSON.parse(customTemplate)
+        MOCK_PROFESSIONAL_DATA[professionalId].formTemplate = parsedTemplate
+      } catch (e) {
+        // Use default template if parsing fails
+      }
+    }
+  }, [router, professionalId])
 
   if (!userName) return null
 
@@ -80,18 +94,53 @@ export default function ProfessionalDetailPage() {
     setFormData((prev) => ({ ...prev, [questionId]: value }))
   }
 
+  const handleImageUpload = (questionId: string, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Check file size (max 5MB for demo)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image size must be less than 5MB")
+      return
+    }
+
+    // Check file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload a valid image file")
+      return
+    }
+
+    // Convert to data URL for mock storage
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setUploadedImages((prev) => ({ ...prev, [questionId]: reader.result as string }))
+      setFormData((prev) => ({ ...prev, [questionId]: file.name }))
+    }
+    reader.readAsDataURL(file)
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
     // Check if all required fields are filled
-    const allFieldsFilled = professional.formTemplate.every((question: any) => formData[question.id]?.trim())
+    const allFieldsFilled = professional.formTemplate.every((question: any) => {
+      if (question.required === false) return true
+      return formData[question.id]?.trim() || uploadedImages[question.id]
+    })
 
     if (!allFieldsFilled) {
+      toast.error("Please fill in all required fields")
       return
     }
 
+    // Show success toast
+    toast.success("Your inquiry has been sent successfully!", {
+      description: `${professional.businessName} will respond to you shortly.`,
+    })
+
     // Reset form
     setFormData({})
+    setUploadedImages({})
   }
 
   return (
@@ -150,14 +199,17 @@ export default function ProfessionalDetailPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               {professional.formTemplate.map((question: any) => (
                 <div key={question.id} className="space-y-2">
-                  <Label htmlFor={question.id}>{question.label}</Label>
+                  <Label htmlFor={question.id}>
+                    {question.label}
+                    {question.required !== false && <span className="text-red-500 ml-1">*</span>}
+                  </Label>
                   {question.type === "text" && (
                     <Input
                       id={question.id}
                       type="text"
                       value={formData[question.id] || ""}
                       onChange={(e) => handleInputChange(question.id, e.target.value)}
-                      required
+                      required={question.required !== false}
                       className="h-11"
                     />
                   )}
@@ -166,7 +218,7 @@ export default function ProfessionalDetailPage() {
                       id={question.id}
                       value={formData[question.id] || ""}
                       onChange={(e) => handleInputChange(question.id, e.target.value)}
-                      required
+                      required={question.required !== false}
                       rows={4}
                       className="resize-none"
                     />
@@ -175,7 +227,7 @@ export default function ProfessionalDetailPage() {
                     <Select
                       value={formData[question.id] || ""}
                       onValueChange={(value) => handleInputChange(question.id, value)}
-                      required
+                      required={question.required !== false}
                     >
                       <SelectTrigger id={question.id} className="h-11">
                         <SelectValue placeholder="Select an option" />
@@ -188,6 +240,46 @@ export default function ProfessionalDetailPage() {
                         ))}
                       </SelectContent>
                     </Select>
+                  )}
+                  {question.type === "image" && (
+                    <div className="space-y-2">
+                      <Input
+                        id={question.id}
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(question.id, e)}
+                        className="h-11"
+                      />
+                      {uploadedImages[question.id] && (
+                        <div className="relative border-2 rounded-lg overflow-hidden max-w-xs">
+                          <img
+                            src={uploadedImages[question.id]}
+                            alt="Uploaded preview"
+                            className="w-full h-auto"
+                          />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            className="absolute top-2 right-2"
+                            onClick={() => {
+                              setUploadedImages((prev) => {
+                                const newImages = { ...prev }
+                                delete newImages[question.id]
+                                return newImages
+                              })
+                              setFormData((prev) => {
+                                const newData = { ...prev }
+                                delete newData[question.id]
+                                return newData
+                              })
+                            }}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               ))}

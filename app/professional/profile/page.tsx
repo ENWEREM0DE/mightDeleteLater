@@ -159,48 +159,25 @@ export default function ProfileEditorPage() {
           <Card className="border-2">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <CardTitle>Inquiry Form Builder</CardTitle>
-                <Button onClick={handleAddQuestion} className="gap-2">
+                <CardTitle>Inquiry Form</CardTitle>
+                <Button onClick={() => router.push("/professional/form-builder")} className="gap-2">
                   <Plus className="w-4 h-4" />
-                  Add Question
+                  Customize Form
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {formTemplate.map((question, index) => (
-                <div key={question.id} className="p-4 border-2 rounded-lg space-y-2">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="font-medium text-foreground">
-                        {index + 1}. {question.label}
-                      </div>
-                      <div className="text-sm text-muted-foreground mt-1">Type: {question.type}</div>
-                      {question.type === "select" && question.options && (
-                        <div className="text-sm text-muted-foreground mt-1">Options: {question.options.join(", ")}</div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" onClick={() => handleEditQuestion(question)}>
-                        Edit
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteQuestion(question.id)}
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {formTemplate.length === 0 && (
-                <div className="text-center py-8 text-muted-foreground">
-                  No questions yet. Click "Add Question" to create your inquiry form.
-                </div>
-              )}
+            <CardContent>
+              <div className="text-center py-8 text-muted-foreground">
+                <p>Use the Form Builder to customize the inquiry form that customers will see.</p>
+                <Button
+                  variant="outline"
+                  onClick={() => router.push("/professional/form-builder")}
+                  className="mt-4 gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  Open Form Builder
+                </Button>
+              </div>
             </CardContent>
           </Card>
 

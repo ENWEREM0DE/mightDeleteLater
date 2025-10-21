@@ -4,6 +4,7 @@ import { Montserrat } from "next/font/google"
 import { Lato } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Suspense } from "react"
+import { Toaster } from "@/components/ui/toaster"
 import "./globals.css"
 
 const montserrat = Montserrat({
@@ -36,6 +37,7 @@ export default function RootLayout({
         <Suspense fallback={null}>
           {children}
           <Analytics />
+          <Toaster />
         </Suspense>
       </body>
     </html>

@@ -62,40 +62,44 @@ function ProfessionalsListContent() {
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20">
         <div className="max-w-4xl mx-auto p-6 space-y-6">
           {/* Header */}
-          <div className="space-y-4">
+          <div className="space-y-4 animate-fadeIn">
             <Link href="/customer/dashboard">
-              <Button variant="ghost" className="gap-2 -ml-2">
+              <Button variant="ghost" className="gap-2 -ml-2 hover-lift">
                 <ArrowLeft className="w-4 h-4" />
                 Back to categories
               </Button>
             </Link>
             <div>
-              <h1 className="text-3xl font-bold text-foreground text-balance">{category}</h1>
-              <p className="text-muted-foreground mt-1">Showing {professionals.length} professionals near you</p>
+              <h1 className="text-4xl font-bold text-gradient mb-2">{category}</h1>
+              <p className="text-lg text-muted-foreground">Showing {professionals.length} professionals near you</p>
             </div>
           </div>
 
           {/* Professionals List */}
-          <div className="space-y-4">
-            {professionals.map((pro) => (
-              <Link key={pro.id} href={`/customer/professional/${pro.id}?category=${encodeURIComponent(category)}`}>
-                <Card className="border-2 hover:border-primary hover:shadow-lg transition-all cursor-pointer">
+          <div className="space-y-4 stagger-fadeIn">
+            {professionals.map((pro, index) => (
+              <Link 
+                key={pro.id} 
+                href={`/customer/professional/${pro.id}?category=${encodeURIComponent(category)}`}
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                <Card className="border-2 card-hover cursor-pointer group">
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 space-y-2">
-                        <h3 className="text-xl font-semibold text-foreground">{pro.businessName}</h3>
+                      <div className="flex-1 space-y-3">
+                        <h3 className="text-2xl font-bold text-foreground group-hover:text-primary transition-colors">{pro.businessName}</h3>
                         <div className="flex items-center gap-4 text-sm">
-                          <div className="flex items-center gap-1 text-amber-600">
+                          <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-700">
                             <Star className="w-4 h-4 fill-current" />
-                            <span className="font-medium">{pro.rating}</span>
+                            <span className="font-semibold">{pro.rating}</span>
                           </div>
-                          <div className="flex items-center gap-1 text-muted-foreground">
+                          <div className="flex items-center gap-1.5 text-muted-foreground">
                             <MapPin className="w-4 h-4" />
                             <span>{pro.distance}</span>
                           </div>
                         </div>
                       </div>
-                      <Button>View Profile</Button>
+                      <Button className="gradient-primary text-white btn-scale">View Profile</Button>
                     </div>
                   </CardContent>
                 </Card>

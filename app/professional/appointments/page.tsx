@@ -18,7 +18,7 @@ type Appointment = {
   status: "pending" | "scheduled"
   start: string
   end: string
-  otherPartyName: string
+  customerName: string
   address: string
   priceInfo: string
   inquiryId: string
@@ -31,7 +31,7 @@ const MOCK_APPOINTMENTS: Appointment[] = [
     status: "scheduled",
     start: "2025-10-15T14:00:00",
     end: "2025-10-15T15:00:00",
-    otherPartyName: "Pro Plumbers Inc.",
+    customerName: "john_s",
     address: "123 Main St, Anytown, USA",
     priceInfo: "$150 - $250",
     inquiryId: "101",
@@ -42,7 +42,7 @@ const MOCK_APPOINTMENTS: Appointment[] = [
     status: "pending",
     start: "2025-10-20T10:00:00",
     end: "2025-10-20T11:00:00",
-    otherPartyName: "Spark Electric Co.",
+    customerName: "sarah_m",
     address: "456 Oak Ave, Anytown, USA",
     priceInfo: "Needs Further Investigation",
     inquiryId: "102",
@@ -53,7 +53,7 @@ const MOCK_APPOINTMENTS: Appointment[] = [
     status: "scheduled",
     start: "2025-10-18T09:00:00",
     end: "2025-10-18T10:30:00",
-    otherPartyName: "Cool Air Services",
+    customerName: "mike_t",
     address: "789 Pine Rd, Anytown, USA",
     priceInfo: "$200 - $300",
     inquiryId: "103",
@@ -64,38 +64,64 @@ const MOCK_APPOINTMENTS: Appointment[] = [
     status: "pending",
     start: "2025-10-22T13:00:00",
     end: "2025-10-22T14:00:00",
-    otherPartyName: "Pro Plumbers Inc.",
+    customerName: "emily_r",
     address: "321 Elm St, Anytown, USA",
     priceInfo: "$100 - $150",
     inquiryId: "104",
   },
+  {
+    id: "A5",
+    title: "Water Heater Repair",
+    status: "scheduled",
+    start: "2025-10-25T11:00:00",
+    end: "2025-10-25T13:00:00",
+    customerName: "john_s",
+    address: "555 Maple Dr, Anytown, USA",
+    priceInfo: "$300 - $400",
+    inquiryId: "105",
+  },
+  {
+    id: "A6",
+    title: "Kitchen Faucet Installation",
+    status: "pending",
+    start: "2025-10-28T14:00:00",
+    end: "2025-10-28T15:30:00",
+    customerName: "david_k",
+    address: "789 Oak Blvd, Anytown, USA",
+    priceInfo: "$150 - $200",
+    inquiryId: "106",
+  },
 ]
 
-export default function AppointmentsPage() {
+export default function ProfessionalAppointmentsPage() {
   const router = useRouter()
-  const [userType, setUserType] = useState<"customer" | "professional" | null>(null)
+  const [professionalName, setProfessionalName] = useState("")
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [showAcceptanceModal, setShowAcceptanceModal] = useState(false)
   const [appointmentToAccept, setAppointmentToAccept] = useState<string | null>(null)
 
   useEffect(() => {
-    const customerName = sessionStorage.getItem("customerName")
-    const professionalName = sessionStorage.getItem("professionalName")
-
-    if (customerName) {
-      setUserType("customer")
-    } else if (professionalName) {
-      setUserType("professional")
+    const name = sessionStorage.getItem("professionalName")
+    if (!name) {
+      router.push("/professional/login")
     } else {
-      router.push("/")
+      setProfessionalName(name)
     }
   }, [router])
 
-  if (!userType) return null
+  if (!professionalName) return null
 
-  const pendingAppointments = MOCK_APPOINTMENTS.filter((apt) => apt.status === "pending")
-  const scheduledAppointments = MOCK_APPOINTMENTS.filter((apt) => apt.status === "scheduled")
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    })
+  }
 
   const handleAppointmentClick = (appointment: Appointment) => {
     if (appointment.status === "scheduled") {
@@ -111,78 +137,93 @@ export default function AppointmentsPage() {
   }
 
   const handleAcceptanceSubmit = (data: { price?: { min: number; max: number }; notes?: string }) => {
-    const priceInfo = data.notes || `$${data.price?.min} - $${data.price?.max}`
-
     setShowAcceptanceModal(false)
     setAppointmentToAccept(null)
-
     // TODO: Update appointment status to "scheduled" in backend
   }
 
   const handleDeclineAppointment = (appointmentId: string, e: React.MouseEvent) => {
     e.stopPropagation()
-
     // TODO: Remove appointment from pending list in backend
   }
 
-  const formatDateTime = (dateString: string) => {
-    const date = new Date(dateString)
-    return date.toLocaleString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    })
-  }
+  // Group appointments by customer
+  const appointmentsByCustomer = MOCK_APPOINTMENTS.reduce(
+    (acc, appointment) => {
+      if (!acc[appointment.customerName]) {
+        acc[appointment.customerName] = []
+      }
+      acc[appointment.customerName].push(appointment)
+      return acc
+    },
+    {} as Record<string, Appointment[]>,
+  )
 
-  const backUrl = userType === "customer" ? "/customer/dashboard" : "/professional/dashboard"
+  const pendingAppointments = MOCK_APPOINTMENTS.filter((apt) => apt.status === "pending")
+  const scheduledAppointments = MOCK_APPOINTMENTS.filter((apt) => apt.status === "scheduled")
 
   return (
     <>
       <AppHeader />
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20">
         <div className="max-w-7xl mx-auto p-6 space-y-6">
+          {/* Header */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Button variant="ghost" className="gap-2 -ml-2" onClick={() => router.push(backUrl)}>
+              <Button variant="ghost" className="gap-2 -ml-2" onClick={() => router.push("/professional/home")}>
                 <ArrowLeft className="w-4 h-4" />
                 Back
               </Button>
               <div>
                 <h1 className="text-3xl font-bold text-foreground">My Appointments</h1>
-                <p className="text-muted-foreground mt-1">
-                  {userType === "professional"
-                    ? "Manage incoming appointment requests and scheduled appointments"
-                    : "View your pending and scheduled appointments"}
-                </p>
+                <p className="text-muted-foreground mt-1">Manage appointments organized by customer</p>
               </div>
             </div>
           </div>
 
+          {/* Summary Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="border-2">
+              <CardContent className="p-4">
+                <div className="text-2xl font-bold text-foreground">{MOCK_APPOINTMENTS.length}</div>
+                <div className="text-sm text-muted-foreground">Total Appointments</div>
+              </CardContent>
+            </Card>
+            <Card className="border-2">
+              <CardContent className="p-4">
+                <div className="text-2xl font-bold text-amber-600">{pendingAppointments.length}</div>
+                <div className="text-sm text-muted-foreground">Pending Requests</div>
+              </CardContent>
+            </Card>
+            <Card className="border-2">
+              <CardContent className="p-4">
+                <div className="text-2xl font-bold text-green-600">{scheduledAppointments.length}</div>
+                <div className="text-sm text-muted-foreground">Scheduled</div>
+              </CardContent>
+            </Card>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Pending Appointments */}
+            {/* Pending Requests */}
             <Card className="border-2">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Clock className="w-5 h-5 text-amber-500" />
-                  {userType === "professional" ? "Pending Requests" : "Pending Appointments"}
+                  Pending Requests
                   <Badge variant="secondary">{pendingAppointments.length}</Badge>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {pendingAppointments.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-8">
-                    {userType === "professional" ? "No pending requests" : "No pending appointments"}
-                  </p>
+                  <p className="text-sm text-muted-foreground text-center py-8">No pending requests</p>
                 ) : (
                   pendingAppointments.map((appointment) => (
-                    <Card key={appointment.id} className={userType === "customer" ? "" : ""}>
+                    <Card key={appointment.id}>
                       <CardContent className="p-4 space-y-2">
                         <div className="flex items-start justify-between">
                           <div className="space-y-1">
                             <h3 className="font-semibold text-foreground">{appointment.title}</h3>
-                            <p className="text-sm text-muted-foreground">{appointment.otherPartyName}</p>
+                            <p className="text-sm text-muted-foreground">Customer: {appointment.customerName}</p>
                           </div>
                           <Badge variant="outline" className="text-amber-600 border-amber-600">
                             Pending
@@ -196,27 +237,25 @@ export default function AppointmentsPage() {
                           <MapPin className="w-4 h-4" />
                           {appointment.address}
                         </div>
-                        {userType === "professional" && (
-                          <div className="flex gap-2 pt-2">
-                            <Button
-                              size="sm"
-                              className="flex-1 gap-2"
-                              onClick={(e) => handleAcceptAppointment(appointment.id, e)}
-                            >
-                              <Check className="w-4 h-4" />
-                              Accept
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="flex-1 gap-2 text-destructive hover:text-destructive bg-transparent"
-                              onClick={(e) => handleDeclineAppointment(appointment.id, e)}
-                            >
-                              <X className="w-4 h-4" />
-                              Decline
-                            </Button>
-                          </div>
-                        )}
+                        <div className="flex gap-2 pt-2">
+                          <Button
+                            size="sm"
+                            className="flex-1 gap-2"
+                            onClick={(e) => handleAcceptAppointment(appointment.id, e)}
+                          >
+                            <Check className="w-4 h-4" />
+                            Accept
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 gap-2 text-destructive hover:text-destructive bg-transparent"
+                            onClick={(e) => handleDeclineAppointment(appointment.id, e)}
+                          >
+                            <X className="w-4 h-4" />
+                            Decline
+                          </Button>
+                        </div>
                       </CardContent>
                     </Card>
                   ))
@@ -229,7 +268,7 @@ export default function AppointmentsPage() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <CalendarIcon className="w-5 h-5 text-green-500" />
-                  Scheduled Appointments
+                  Scheduled
                   <Badge variant="secondary">{scheduledAppointments.length}</Badge>
                 </CardTitle>
               </CardHeader>
@@ -247,7 +286,7 @@ export default function AppointmentsPage() {
                         <div className="flex items-start justify-between">
                           <div className="space-y-1">
                             <h3 className="font-semibold text-foreground">{appointment.title}</h3>
-                            <p className="text-sm text-muted-foreground">{appointment.otherPartyName}</p>
+                            <p className="text-sm text-muted-foreground">Customer: {appointment.customerName}</p>
                           </div>
                           <Badge variant="outline" className="text-green-600 border-green-600">
                             Scheduled
@@ -268,6 +307,68 @@ export default function AppointmentsPage() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Appointments Grouped by Customer */}
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-foreground">Appointments by Customer</h2>
+            {Object.entries(appointmentsByCustomer).map(([customerName, appointments]) => (
+              <Card key={customerName} className="border-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    {customerName}
+                    <Badge variant="secondary">{appointments.length}</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {appointments.map((appointment) => (
+                    <Card
+                      key={appointment.id}
+                      className={`cursor-pointer hover:border-primary transition-colors ${
+                        appointment.status === "scheduled" ? "" : "opacity-75"
+                      }`}
+                      onClick={() => appointment.status === "scheduled" && handleAppointmentClick(appointment)}
+                    >
+                      <CardContent className="p-4 space-y-2">
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1 flex-1">
+                            <h3 className="font-semibold text-foreground">{appointment.title}</h3>
+                          </div>
+                          <Badge
+                            variant="outline"
+                            className={
+                              appointment.status === "pending"
+                                ? "text-amber-600 border-amber-600"
+                                : "text-green-600 border-green-600"
+                            }
+                          >
+                            {appointment.status === "pending" ? (
+                              <>
+                                <Clock className="w-3 h-3 mr-1" />
+                                Pending
+                              </>
+                            ) : (
+                              "Scheduled"
+                            )}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <CalendarIcon className="w-4 h-4" />
+                          {formatDateTime(appointment.start)}
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <MapPin className="w-4 h-4" />
+                          {appointment.address}
+                        </div>
+                        {appointment.priceInfo && (
+                          <div className="text-sm font-medium text-foreground">Price: {appointment.priceInfo}</div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
         </div>
 
         <AppointmentAcceptanceModal
@@ -286,6 +387,7 @@ export default function AppointmentsPage() {
             selectedAppointment
               ? {
                   ...selectedAppointment,
+                  otherPartyName: selectedAppointment.customerName,
                   dateTime: formatDateTime(selectedAppointment.start),
                 }
               : null
@@ -295,3 +397,4 @@ export default function AppointmentsPage() {
     </>
   )
 }
+
